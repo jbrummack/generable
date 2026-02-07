@@ -1,0 +1,16 @@
+{
+  "text": {
+    "format": {
+      "type": "json_schema",
+      "name": "request_schema",
+      "schema": $SCHEMA
+    }
+  },
+  "input": [
+    {
+      "role": "user",
+      "content": "$PROMPT"
+    }
+  ],
+  "model": "gpt-5-nano-2025-08-07"
+}
