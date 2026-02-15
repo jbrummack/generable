@@ -7,7 +7,7 @@ pub struct Sampler {
     lut: HashMap<u32, String>,
     state: u32,
 }
-fn init_vocab() -> (Vocabulary, HashMap<u32, String>) {
+fn llm_vocab() -> (Vocabulary, HashMap<u32, String>) {
     let vocab: Result<HashMap<String, u32>, _> = serde_json::from_str(include_str!("vocab.json"));
     let vocab = vocab.unwrap();
 
@@ -19,7 +19,7 @@ fn init_vocab() -> (Vocabulary, HashMap<u32, String>) {
     }
     (vocabulary, lut)
 }
-/*fn init_vocab() -> (Vocabulary, HashMap<u32, String>) {
+fn ascii_vocab() -> (Vocabulary, HashMap<u32, String>) {
     let mut vocab = Vocabulary::new(128);
     let mut lut = HashMap::new();
 
@@ -31,10 +31,10 @@ fn init_vocab() -> (Vocabulary, HashMap<u32, String>) {
     }
 
     (vocab, lut)
-}*/
+}
 impl Sampler {
     pub fn new(schema: serde_json::Value) -> Self {
-        let (vocabulary, lut) = init_vocab();
+        let (vocabulary, lut) = ascii_vocab();
         let regex = outlines_core::json_schema::regex_from_value(&schema, None, None).unwrap();
         let idx = Index::new(&regex, &vocabulary).unwrap();
         let state = idx.initial_state();
@@ -57,10 +57,11 @@ impl Sampler {
     input[access]
 }
 */
-use rand::Rng;
+use rand::{Rng, SeedableRng, rngs::StdRng};
 
 fn select_random_ish<T: Copy>(input: &Vec<T>) -> T {
-    let mut rng = rand::rng();
+    let mut rng = StdRng::from_seed([128u8; 32]);
+    //let mut rng = rand::SeedableRng::seed_from_u64(1337);
     let idx = rng.next_u64() as usize % input.len();
     input[idx]
 }
