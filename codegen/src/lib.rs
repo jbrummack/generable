@@ -1,185 +1,107 @@
-//mod primitives;
 use proc_macro::TokenStream;
-use proc_macro2::Span;
 use quote::quote;
+use syn::{Data, DeriveInput, Field, Fields, parse_macro_input};
 
-use syn::{Data, DeriveInput, LitStr, parse_macro_input};
-/*#[proc_macro_derive(GenerableDynamic, attributes(describtion))]
-pub fn gen_fields2(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-
-    impl_gen_fields2(&input).into()
-}*/
-
-#[proc_macro_derive(Generable, attributes(description))]
-pub fn gen_fields(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-
-    impl_gen_fields(&input).into()
-}
-fn impl_cache_generation(input: &DeriveInput) -> proc_macro2::TokenStream {
-    let name = &input.ident;
-    let cache_name = format!("UP_CACHED_{}", name.to_string().to_uppercase());
-    let cache_error_msg = format!("Failed to preprocess {}", name.to_string());
-    let parent_description = input
+fn extract_description(input: &Field) -> Option<String> {
+    input
         .attrs
         .iter()
         .find(|a| a.path().is_ident("description"))
         .and_then(|attr| attr.parse_args::<syn::LitStr>().ok())
-        .map(|lit| lit.value());
-    let cache_error_msg_lit = LitStr::new(&cache_error_msg, Span::call_site());
-    let cached_ident = syn::Ident::new(&cache_name, Span::call_site());
-    let struct_data_descr = parent_description
-        .map(|parent_description| {
-            let descr_lit = LitStr::new(&parent_description, Span::call_site());
-            quote! {
-                #name::schema(Some(#descr_lit))
-            }
-        })
-        .unwrap_or(quote! {#name::schema(None)});
-    quote! {
-        static #cached_ident: std::sync::LazyLock<Box<serde_json::value::RawValue>> = LazyLock::new(|| {
-            let struct_data = #struct_data_descr;
-            //struct_data.set_strict();
-            let rv = RawValue::from_string(
-                serde_json::to_string(&struct_data).expect(#cache_error_msg_lit),
-            )
-            .expect(#cache_error_msg_lit);
-            rv
-        });
-        impl generable::CachedGenerable for #name {
-            fn get_schema() -> Box<serde_json::value::RawValue> {
-                #cached_ident.clone()
-            }
-        }
-    }
+        .map(|lit| lit.value())
 }
-struct CompoundTypeField<'a> {
-    r#type: &'a syn::Type,
-    field_name: &'a syn::Ident,
+fn extract_parent_description(input: &DeriveInput) -> Option<String> {
+    input
+        .attrs
+        .iter()
+        .find(|a| a.path().is_ident("description"))
+        .and_then(|attr| attr.parse_args::<syn::LitStr>().ok())
+        .map(|lit| lit.value())
 }
-enum CompoundType<'a> {
-    Struct {
-        fields: Vec<CompoundTypeField<'a>>,
-    },
-    Enum {
-        options: Vec<Vec<CompoundTypeField<'a>>>,
-    },
-    Union {
-        variants: Vec<CompoundTypeField<'a>>,
-    },
-}
-impl<'a> CompoundType<'a> {
-    fn new(derive_data: &'a syn::Data) -> Self {
-        match derive_data {
-            Data::Struct(data) => {
-                let fields: Vec<_> = data
-                    .fields
-                    .iter()
-                    .map(|field| {
-                        let field_name = field.ident.as_ref().unwrap();
-                        let r#type = &field.ty;
-                        CompoundTypeField { r#type, field_name }
-                    })
-                    .collect();
-                Self::Struct { fields }
-            }
-            Data::Enum(data) => {
-                let options: Vec<_> = data
-                    .variants
-                    .iter()
-                    .map(|variant| {
-                        let fields: Vec<_> = variant
-                            .fields
-                            .iter()
-                            .map(|field| {
-                                let field_name = field.ident.as_ref().unwrap();
-                                let r#type = &field.ty;
-                                CompoundTypeField { r#type, field_name }
-                            })
-                            .collect();
-                        fields
-                    })
-                    .collect();
-                Self::Enum { options }
-            }
-            Data::Union(data) => {
-                let variants: Vec<_> = data
-                    .fields
-                    .named
-                    .iter()
-                    .map(|variant| {
-                        let field_name = variant.ident.as_ref().unwrap();
-                        let r#type = &variant.ty;
-                        CompoundTypeField { r#type, field_name }
-                    })
-                    .collect();
-                Self::Union { variants }
-            }
-            _ => panic!("Describe can only be derived for structs"),
-        }
-    }
-}
-fn impl_gen_fields(input: &DeriveInput) -> proc_macro2::TokenStream {
+
+#[proc_macro_derive(DynamicGenerable, attributes(description))]
+pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
     let name = &input.ident;
 
-    let fields = match &input.data {
-        Data::Struct(data) => &data.fields,
-        _ => panic!("Describe can only be derived for structs"),
+    let schema_impl = match &input.data {
+        Data::Struct(data_struct) => {
+            let fields_gen = generate_fields_schema(&data_struct.fields);
+            quote! {
+                DynamicSchema::Struct(
+                    stringify!(#name),
+                    DynamicStruct(#fields_gen.into())
+                )
+            }
+        }
+        Data::Enum(data_enum) => {
+            let is_pure_enum = data_enum
+                .variants
+                .iter()
+                .all(|v| matches!(v.fields, Fields::Unit));
+            if is_pure_enum {
+                let variant_names = data_enum.variants.iter().map(|v| {
+                    let v_name = &v.ident;
+                    quote! { stringify!(#v_name) }
+                });
+                quote! {
+                    DynamicSchema::Enum(vec![ #(#variant_names),* ])
+                }
+            } else {
+                let variants = data_enum.variants.iter().map(|variant| {
+                    let v_name = &variant.ident;
+                    match &variant.fields {
+                        Fields::Unit => {
+                            quote! { UnionVariant::Enum(stringify!(#v_name)) }
+                        }
+                        Fields::Named(_fields) => {
+                            let fields_gen = generate_fields_schema(&variant.fields);
+                            quote! {
+                                UnionVariant::Struct(
+                                    stringify!(#v_name),
+                                    DynamicStruct(#fields_gen.into())
+                                )
+                            }
+                        }
+                        Fields::Unnamed(_) => {
+                            panic!(
+                                "Unnamed fields (tuple variants) are not supported by Generable!"
+                            )
+                        }
+                    }
+                });
+
+                quote! {
+                    DynamicSchema::Union(vec![
+                        #(#variants),*
+                    ])
+                }
+            }
+        }
+        Data::Union(_) => panic!("Rust Unions are not supported"),
     };
 
-    let property_field_handlers = fields.iter().map(|field| {
-        let field_name = field.ident.as_ref().unwrap();
-        let field_type = &field.ty;
+    let expanded = quote! {
+        impl DynamicGenerable for #name {
+            fn dynamic_schema() -> DynamicSchema<&'static str> {
+                #schema_impl
+            }
+        }
+    };
 
-        let desc = field
-            .attrs
-            .iter()
-            .find(|a| a.path().is_ident("description"))
-            .and_then(|attr| attr.parse_args::<syn::LitStr>().ok())
-            .map(|lit| lit.value());
-        //.unwrap_or_else(|| field_name.to_string());
-        let field_literal = LitStr::new(&field_name.to_string(), Span::call_site());
-        if let Some(description) = desc {
-            let description_literal = LitStr::new(&description, Span::call_site());
-            quote! {
-                let schema =  <#field_type>::schema(Some(#description_literal));
-                let fname = #field_literal;
-                output.insert(fname, schema);
-            }
-        } else {
-            quote! {
-                let schema =<#field_type>::schema(None);
-                let fname = #field_literal;
-                output.insert(fname, schema);
-            }
-        }
-    });
-    let required_field_handlers = fields.iter().map(|field| {
-        let field_name = field.ident.as_ref().unwrap();
-        let field_type = &field.ty;
-        let field_literal = LitStr::new(&field_name.to_string(), Span::call_site());
-        quote! {
-            if <#field_type>::REQUIRED {
-                fields.push(#field_literal);
-            }
-        }
-    });
-    let cached_schema = impl_cache_generation(input);
+    TokenStream::from(expanded)
+}
 
-    quote! {
-        #cached_schema
-        impl generable::Generable for #name {
-            fn required_fields() -> Option<Vec<&'static str>> {
-                let mut fields = Vec::new();
-                #(#required_field_handlers)*
-                Some(fields)
-            }
-            fn properties() -> Option<HashMap<&'static str, SchemaObject>> {
-                let mut output = std::collections::HashMap::new();
-                #(#property_field_handlers)*
-                Some(output)
-            }
+fn generate_fields_schema(fields: &Fields) -> proc_macro2::TokenStream {
+    match fields {
+        Fields::Named(named) => {
+            let field_quotes = named.named.iter().map(|f| {
+                let f_name = &f.ident;
+                let f_ty = &f.ty;
+                quote! { (stringify!(#f_name), <#f_ty>::dynamic_schema()) }
+            });
+            quote! { [ #(#field_quotes),* ] }
         }
+        _ => quote! { [] },
     }
 }
