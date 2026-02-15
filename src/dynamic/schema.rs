@@ -96,8 +96,14 @@ pub enum DynamicSchema<Key>
 where
     Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debug,
 {
-    Integer,
-    Number,
+    Integer {
+        min: i64,
+        max: u64,
+    },
+    Number {
+        min: f64,
+        max: f64,
+    },
     Bool,
     String,
     Struct(DynamicStruct<Key>),
@@ -137,8 +143,12 @@ where
     ///use to_schema() for non internal use cases
     pub fn to_node(self) -> Node<Key> {
         match self {
-            DynamicSchema::Integer => Node::primitive("integer"),
-            DynamicSchema::Number => Node::primitive("number"),
+            DynamicSchema::Integer { min, max } => Node::number("integer", min, max),
+            DynamicSchema::Number { min, max } => Node::number(
+                "number",
+                serde_json::Number::from_f64(min).unwrap_or(0.into()),
+                serde_json::Number::from_f64(max).unwrap_or(0.into()),
+            ),
             DynamicSchema::Bool => Node::primitive("bool"),
             DynamicSchema::String => Node::primitive("string"),
             DynamicSchema::Struct(dynamic_struct) => dynamic_struct.to_object_node(),
