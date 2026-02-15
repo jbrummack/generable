@@ -1,12 +1,13 @@
-use std::{collections::HashMap, time::SystemTime};
+use std::collections::HashMap;
 
 use outlines_core::{index::Index, prelude::Vocabulary};
 
-pub struct Sampler {
+pub struct Sampler<'a> {
     idx: Index,
-    lut: HashMap<u32, String>,
+    lut: &'a HashMap<u32, String>,
     state: u32,
 }
+#[allow(unused)]
 fn llm_vocab() -> (Vocabulary, HashMap<u32, String>) {
     let vocab: Result<HashMap<String, u32>, _> = serde_json::from_str(include_str!("vocab.json"));
     let vocab = vocab.unwrap();
@@ -19,7 +20,7 @@ fn llm_vocab() -> (Vocabulary, HashMap<u32, String>) {
     }
     (vocabulary, lut)
 }
-fn ascii_vocab() -> (Vocabulary, HashMap<u32, String>) {
+pub fn ascii_vocab() -> (Vocabulary, HashMap<u32, String>) {
     let mut vocab = Vocabulary::new(128);
     let mut lut = HashMap::new();
 
@@ -32,13 +33,17 @@ fn ascii_vocab() -> (Vocabulary, HashMap<u32, String>) {
 
     (vocab, lut)
 }
-impl Sampler {
-    pub fn new(schema: serde_json::Value) -> Self {
-        let (vocabulary, lut) = ascii_vocab();
+impl<'a> Sampler<'a> {
+    pub fn new(schema: serde_json::Value, vocab: &'a (Vocabulary, HashMap<u32, String>)) -> Self {
+        let (vocabulary, lut) = vocab;
         let regex = outlines_core::json_schema::regex_from_value(&schema, None, None).unwrap();
         let idx = Index::new(&regex, &vocabulary).unwrap();
         let state = idx.initial_state();
-        Self { idx, state, lut }
+        Self {
+            idx,
+            state,
+            lut: &lut,
+        }
     }
     pub fn next(&mut self) -> Option<String> {
         let pred = self.idx.allowed_tokens(&self.state)?;

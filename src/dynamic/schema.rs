@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
 ///DynamicStruct helper
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DynamicStruct<Key>(pub HashMap<Key, DynamicSchema<Key>>)
 where
     Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debug;
@@ -68,7 +68,7 @@ where
         result
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UnionVariant<Key>
 where
     Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debug,
@@ -91,10 +91,10 @@ where
     }
 }
 ///DynamicSchema represents a machine generated intermediate AST that can be converted into different structured schemas (e.g. JSON-Schema)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DynamicSchema<Key>
 where
-    Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debug,
+    Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debug + PartialEq,
 {
     Integer {
         min: i64,

@@ -2,7 +2,6 @@ use codegen::DynamicGenerable;
 use generable::{
     DynamicGenerable,
     dynamic::schema::{DynamicSchema, DynamicStruct, UnionVariant},
-    testing::sampler::Sampler,
 };
 #[derive(Debug, serde::Serialize, DynamicGenerable)]
 pub enum Directions {
@@ -39,6 +38,7 @@ fn main() {
     println!("{dv}");
     let schema: DynamicSchema<&'static str> = DynamicSchema::Union(vec![
         UnionVariant::Enum("Empty"),
+        UnionVariant::Enum("Invalid"),
         UnionVariant::Struct(
             "Coordinate",
             DynamicStruct([("x", f64::dynamic_schema()), ("y", f64::dynamic_schema())].into()),
@@ -55,24 +55,16 @@ fn main() {
             ),
         ),
     ]);
+    let other_schema = Address::dynamic_schema().to_value().unwrap();
+    let schema_as_expected = schema == Address::dynamic_schema();
     let node = schema.to_value().unwrap();
+    println!("{other_schema:#?}\n{node:#?}");
 
     //let njs = serde_json::to_string_pretty(&node).unwrap();
     println!("{js}");
     // println!("{njs}");
-    let validator = jsonschema::validator_for(&node).unwrap();
-    let mut sampler = Sampler::new(node);
-    let mut output = String::new();
-    while let Some(next) = sampler.next() {
-        //print!("{next}")
-        output.push_str(&next);
-    }
-    let val: serde_json::Value = serde_json::from_str(&output).unwrap();
-    let evaluation = validator.evaluate(&val).flag();
-    println!("{output}");
-    println!("{evaluation:?}");
-    let autogen_schema = Address::dynamic_schema();
-    println!("{autogen_schema:?}");
+
     let autogen_schema = Directions::dynamic_schema();
-    println!("{autogen_schema:?}")
+    println!("{autogen_schema:?}");
+    println!("Schema as expected: {schema_as_expected}");
 }
