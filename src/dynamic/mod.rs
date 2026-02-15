@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{f64, fmt::Debug};
 
 use crate::dynamic::schema::DynamicSchema;
 pub mod description;
@@ -31,6 +31,14 @@ macro_rules! impl_dynamic_generable_for_ints {
             }
         )*
     };
+}
+impl DynamicGenerable for serde_json::Number {
+    fn dynamic_schema() -> DynamicSchema<&'static str> {
+        DynamicSchema::Number {
+            min: f64::MIN,
+            max: f64::MAX,
+        }
+    }
 }
 impl_dynamic_generable_for_ints!(i8, i16, i32, i64, isize, u8, u16, u32, u64, usize,);
 macro_rules! impl_dynamic_generable_for_floats {
