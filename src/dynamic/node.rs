@@ -5,7 +5,7 @@ use crate::dynamic::{Array, False, Object, String, True};
 use serde::Serialize;
 use std::fmt::Debug;
 use std::hash::Hash;
-///Node<Key> represents a JSON-Schema AST-Element with generic string keys
+///`Node<Key>` represents a JSON-Schema AST-Element with generic string keys
 #[derive(Debug, Serialize)]
 #[serde(untagged, rename_all = "camelCase")]
 pub enum Node<Key: AsRef<str> + Serialize> {

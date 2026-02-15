@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Field, Fields, parse_macro_input};
-
+#[allow(unused)]
 fn extract_description(input: &Field) -> Option<String> {
     input
         .attrs
@@ -10,6 +10,7 @@ fn extract_description(input: &Field) -> Option<String> {
         .and_then(|attr| attr.parse_args::<syn::LitStr>().ok())
         .map(|lit| lit.value())
 }
+#[allow(unused)]
 fn extract_parent_description(input: &DeriveInput) -> Option<String> {
     input
         .attrs
