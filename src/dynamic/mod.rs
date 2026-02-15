@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::dynamic::schema::DynamicSchema;
 pub mod description;
-pub mod gemini;
+//pub mod gemini;
 pub mod node;
 pub mod schema;
 
