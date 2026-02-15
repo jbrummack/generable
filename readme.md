@@ -27,10 +27,12 @@ pub enum Address {
 }
 ```
 **generate a schema**
+
 ```rust
 let schema = Address::dynamic_schema().to_string_pretty()?;
 ```
 **build a schema at runtime**
+
 ```DynamicSchema<Key: AsRef<str>>``` works with &str, String, Arc<str>, or whatever string you need at runtime as long as it conforms to ```AsRef<str>```
 ```rust
 let schema: DynamicSchema<&'static str> = DynamicSchema::Union(vec![
@@ -53,3 +55,7 @@ let schema: DynamicSchema<&'static str> = DynamicSchema::Union(vec![
             ),
         ]);
 ```
+
+## Roadmap
+- Support JSON-Schema descriptions (and maybe an extractor for injecting those into prompts)
+- More control over Integer/Number types like a BoundedInt<const MIN: i64,const MAX: i64>. Sadly there is no way to implement float const generics.
