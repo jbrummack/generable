@@ -5,7 +5,7 @@
 The Generable derive macro generates a dynamic schema which can in turn be converted into a JSON-Schema or other schemas like a gemini gRPC protobuf::Value. Because the schema of an object isnt subject to change we can generate it once and cache it as a static value after that to avoid recomputing it again.
 
 
-Generable doesnt focus on perfect JSON-Schema specification correctness but on compatibility with LLM Inference Providers and ease of use.
+Generable doesnt focus on perfect JSON-Schema specification correctness but on compatibility with LLM Inference Providers and ease of use. It is loosely inspired by the @Generable macro from Apples FoundationModel framework.
 
 ## Usage
 
