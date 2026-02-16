@@ -23,6 +23,8 @@ pub enum Node<Key: AsRef<str> + Serialize> {
         minimum: Option<serde_json::Number>,
         #[serde(skip_serializing_if = "Option::is_none")]
         maximum: Option<serde_json::Number>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        format: Option<Key>,
     },
     #[serde(rename_all = "camelCase")]
     Struct {
@@ -116,6 +118,7 @@ impl<Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debu
             r#type,
             minimum: Some(min.into()),
             maximum: Some(max.into()),
+            format: None,
         }
     }
     pub fn primitive(r#type: &'static str) -> Self {
@@ -123,6 +126,7 @@ impl<Key: AsRef<str> + Serialize + Clone + Hash + Eq + From<&'static str> + Debu
             r#type,
             minimum: None,
             maximum: None,
+            format: None,
         }
     }
     pub fn union(variants: Vec<UnionVariant<Key>>) -> Self {
