@@ -4,13 +4,13 @@ pub mod example_types;
 pub mod sampler;
 #[cfg(test)]
 mod tests {
-    use crate::{
+    use crate::testing::{
+        example_types::Address,
+        sampler::{Sampler, ascii_vocab},
+    };
+    use generable::{
         DynamicGenerable,
         dynamic::schema::{DynamicSchema, DynamicStruct, UnionVariant},
-        testing::{
-            example_types::Address,
-            sampler::{Sampler, ascii_vocab},
-        },
     };
     #[test]
     fn check_json_correctness() {

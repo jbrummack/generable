@@ -12,8 +12,7 @@
 //! and cache it as a static value after that to avoid recomputing it again.
 pub mod dynamic;
 pub use dynamic::DynamicGenerable;
-#[cfg(test)]
-pub mod testing;
+
 pub mod derive {
     pub use codegen::DynamicGenerable;
 }

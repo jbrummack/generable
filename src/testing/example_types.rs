@@ -1,6 +1,5 @@
-use crate::DynamicGenerable;
-use crate::dynamic::schema::{DynamicSchema, DynamicStruct, UnionVariant};
-use codegen::DynamicGenerable;
+use generable::derive::DynamicGenerable;
+use generable::dynamic::schema::{DynamicStruct, UnionVariant};
 #[derive(Debug, serde::Serialize, serde::Deserialize, DynamicGenerable)]
 pub enum Address {
     Empty,

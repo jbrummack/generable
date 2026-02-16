@@ -29,7 +29,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
         Data::Struct(data_struct) => {
             let fields_gen = generate_fields_schema(&data_struct.fields);
             quote! {
-                ::generable::DynamicSchema::Struct(
+                generable::dynamic::schema::DynamicSchema::Struct(
                     stringify!(#name),
                     DynamicStruct(#fields_gen.into())
                 )
@@ -46,7 +46,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
                     quote! { stringify!(#v_name) }
                 });
                 quote! {
-                    DynamicSchema::Enum(vec![ #(#variant_names),* ])
+                    generable::dynamic::schema::DynamicSchema::Enum(vec![ #(#variant_names),* ])
                 }
             } else {
                 let variants = data_enum.variants.iter().map(|variant| {
@@ -73,7 +73,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
                 });
 
                 quote! {
-                    DynamicSchema::Union(vec![
+                    generable::dynamic::schema::DynamicSchema::Union(vec![
                         #(#variants),*
                     ])
                 }
@@ -84,7 +84,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         impl generable::dynamic::DynamicGenerable for #name {
-            fn dynamic_schema() -> DynamicSchema<&'static str> {
+            fn dynamic_schema() -> generable::dynamic::schema::DynamicSchema<&'static str> {
                 #schema_impl
             }
         }
