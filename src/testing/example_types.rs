@@ -14,3 +14,8 @@ pub enum Address {
         street: String,
     },
 }
+#[derive(Debug, serde::Serialize, serde::Deserialize, DynamicGenerable)]
+pub struct TestStruct {
+    v1: u8,
+    v2: String,
+}

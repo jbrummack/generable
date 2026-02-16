@@ -30,7 +30,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
             let fields_gen = generate_fields_schema(&data_struct.fields);
             quote! {
                 generable::dynamic::schema::DynamicSchema::Struct(
-                    stringify!(#name),
+                    //stringify!(#name),
                     generable::dynamic::schema::DynamicStruct(#fields_gen.into())
                 )
             }
