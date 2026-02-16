@@ -1,5 +1,5 @@
 use generable::derive::DynamicGenerable;
-use generable::dynamic::schema::{DynamicStruct, UnionVariant};
+//use generable::dynamic::schema::{DynamicStruct, UnionVariant};
 #[derive(Debug, serde::Serialize, serde::Deserialize, DynamicGenerable)]
 pub enum Address {
     Empty,

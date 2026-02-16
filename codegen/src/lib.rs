@@ -31,7 +31,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
             quote! {
                 generable::dynamic::schema::DynamicSchema::Struct(
                     stringify!(#name),
-                    DynamicStruct(#fields_gen.into())
+                    generable::dynamic::schema::DynamicStruct(#fields_gen.into())
                 )
             }
         }
@@ -53,14 +53,14 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
                     let v_name = &variant.ident;
                     match &variant.fields {
                         Fields::Unit => {
-                            quote! { UnionVariant::Enum(stringify!(#v_name)) }
+                            quote! { generable::dynamic::schema::UnionVariant::Enum(stringify!(#v_name)) }
                         }
                         Fields::Named(_fields) => {
                             let fields_gen = generate_fields_schema(&variant.fields);
                             quote! {
-                                UnionVariant::Struct(
+                                generable::dynamic::schema::UnionVariant::Struct(
                                     stringify!(#v_name),
-                                    DynamicStruct(#fields_gen.into())
+                                    generable::dynamic::schema::DynamicStruct(#fields_gen.into())
                                 )
                             }
                         }
