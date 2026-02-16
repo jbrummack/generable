@@ -59,3 +59,6 @@ let schema: DynamicSchema<&'static str> = DynamicSchema::Union(vec![
 ## Roadmap
 - Support JSON-Schema descriptions (and maybe an extractor for injecting those into prompts)
 - More control over Integer/Number types like a BoundedInt<const MIN: i64,const MAX: i64>. Sadly there is no way to implement float const generics.
+- Support for UUIDs
+- Support for Dates
+- Caching traits
