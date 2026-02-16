@@ -29,7 +29,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
         Data::Struct(data_struct) => {
             let fields_gen = generate_fields_schema(&data_struct.fields);
             quote! {
-                DynamicSchema::Struct(
+                ::generable::DynamicSchema::Struct(
                     stringify!(#name),
                     DynamicStruct(#fields_gen.into())
                 )
@@ -83,7 +83,7 @@ pub fn derive_dynamic_generable(input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-        impl DynamicGenerable for #name {
+        impl generable::dynamic::DynamicGenerable for #name {
             fn dynamic_schema() -> DynamicSchema<&'static str> {
                 #schema_impl
             }
